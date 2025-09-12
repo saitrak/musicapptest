@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Music Site</title>
+<style>
+  body {
+    margin: 0;
+    font-family: 'Segoe UI', sans-serif;
+    background: #121212;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    min-height: 100vh;
+  }
+
+  h1 {
+    margin-top: 20px;
+    color: #ff0066;
+  }
+
+  #player-container {
+    margin-top: 30px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 90%;
+    max-width: 600px;
+    background: #1e1e1e;
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0 0 15px rgba(255,0,102,0.3);
+  }
+
+  audio {
+    width: 100%;
+    margin-top: 10px;
+  }
+
+  #playlist {
+    margin-top: 20px;
+    width: 100%;
+    max-height: 300px;
+    overflow-y: auto;
+    border-top: 1px solid #333;
+    padding-top: 10px;
+  }
+
+  #playlist div {
+    padding: 8px;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: background 0.3s;
+  }
+
+  #playlist div:hover, #playlist .active {
+    background: #ff0066;
+    color: #fff;
+  }
+
+  #controls {
+    margin-top: 15px;
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+  }
+
+  button {
+    padding: 10px 15px;
+    border: none;
+    border-radius: 8px;
+    background: #ff0066;
+    color: #fff;
+    cursor: pointer;
+    transition: 0.2s;
+    font-size: 16px;
+  }
+
+  button:hover {
+    background: #e6005c;
+  }
+
+  #credits {
+    margin-top: 30px;
+    text-align: center;
+    font-size: 14px;
+    color: #aaa;
+    max-width: 600px;
+  }
+
+  @media (max-width: 500px) {
+    button { font-size: 14px; padding: 8px 12px; }
+  }
+</style>
+</head>
+<body>
+
+<h1>🎵 My Music Player</h1>
+
+<div id="player-container">
+  <audio id="audio" controls></audio>
+  <div id="controls">
+    <button id="prev">⏮️ Prev</button>
+    <button id="playpause">▶️ Play</button>
+    <button id="next">⏭️ Next</button>
+  </div>
+  <div id="playlist"></div>
+</div>
+
+<div id="credits">
+  🎧 Music site by Your Name | All music sourced legally | Hosted on GitHub
+</div>
+
+<script>
+const audio = document.getElementById('audio');
+const playlistDiv = document.getElementById('playlist');
+const playPauseBtn = document.getElementById('playpause');
+const prevBtn = document.getElementById('prev');
+const nextBtn = document.getElementById('next');
+
+let tracks = [];
+let currentTrack = 0;
+let isPlaying = false;
+
+// Load musics.txt
+fetch('/musicassets/music.txt')
+  .then(res => res.text())
+  .then(data => {
+    tracks = data.split('\n').filter(line => line.trim() !== '');
+    if(tracks.length > 0){
+      loadTrack(0);
+      renderPlaylist();
+    }
+  });
+
+// Render playlist
+function renderPlaylist() {
+  playlistDiv.innerHTML = '';
+  tracks.forEach((track, index) => {
+    const trackDiv = document.createElement('div');
+    const fileName = track.split('/').pop();
+    trackDiv.textContent = fileName;
+    trackDiv.addEventListener('click', () => {
+      loadTrack(index);
+      playAudio();
+    });
+    if(index === currentTrack) trackDiv.classList.add('active');
+    playlistDiv.appendChild(trackDiv);
+  });
+}
+
+// Load track
+function loadTrack(index) {
+  currentTrack = index;
+  audio.src = tracks[currentTrack];
+  updatePlaylistActive();
+}
+
+// Play/pause functions
+function playAudio() {
+  audio.play();
+  isPlaying = true;
+  playPauseBtn.textContent = '⏸️ Pause';
+}
+
+function pauseAudio() {
+  audio.pause();
+  isPlaying = false;
+  playPauseBtn.textContent = '▶️ Play';
+}
+
+// Update active class in playlist
+function updatePlaylistActive() {
+  Array.from(playlistDiv.children).forEach((div, idx) => {
+    div.classList.toggle('active', idx === currentTrack);
+  });
+}
+
+// Controls
+playPauseBtn.addEventListener('click', () => {
+  isPlaying ? pauseAudio() : playAudio();
+});
+
+prevBtn.addEventListener('click', () => {
+  currentTrack = (currentTrack - 1 + tracks.length) % tracks.length;
+  loadTrack(currentTrack);
+  playAudio();
+});
+
+nextBtn.addEventListener('click', () => {
+  currentTrack = (currentTrack + 1) % tracks.length;
+  loadTrack(currentTrack);
+  playAudio();
+});
+
+// Auto play next track
+audio.addEventListener('ended', () => {
+  nextBtn.click();
+});
+</script>
+
+</body>
+</html>
