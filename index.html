@@ -52,7 +52,10 @@ let isPlaying = false;
 fetch('music.txt')
   .then(res => res.text())
   .then(data => {
-    tracks = data.split('\n').filter(line => line.trim() !== '');
+    tracks = data.split('\n')
+      .map(line => line.trim())
+      .filter(line => line !== '')
+      .map(line => encodeURI(line)); // convert spaces -> %20
     if(tracks.length > 0){
       loadTrack(0);
       renderPlaylist();
@@ -70,7 +73,7 @@ function renderPlaylist() {
   playlistDiv.innerHTML = '';
   tracks.forEach((track, index) => {
     const trackDiv = document.createElement('div');
-    trackDiv.textContent = track.split('/').pop();
+    trackDiv.textContent = decodeURI(track.split('/').pop()); // show with spaces
     trackDiv.addEventListener('click', () => {
       loadTrack(index);
       playAudio();
