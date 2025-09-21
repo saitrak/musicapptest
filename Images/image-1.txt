@@ -1,2 +1,0 @@
-imgurl: https://i.imgur.com/E34reu9.png
-imgname: test-bro
