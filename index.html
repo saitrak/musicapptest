@@ -116,51 +116,45 @@
             const searchInput = document.getElementById('search-input');
             let allImages = [];
 
-            // This function simulates fetching data from a .txt file
-            // In a real scenario, you would use a web server to serve these files
-            async function fetchImageInfo(fileNumber) {
-                const url = `https://raw.githubusercontent.com/musicapptest/Images/main/image-${fileNumber}.txt`;
+            // IMPORTANT: Replace with your actual GitHub username and repository name
+            const GITHUB_USERNAME = 'musicapptest';
+            const REPO_NAME = 'Images';
+            const BRANCH_NAME = 'main'; // or 'master' if that's your branch name
+
+            async function fetchImages() {
+                galleryContainer.innerHTML = '<h2>Loading images...</h2>';
+                const url = `https://api.github.com/repos/${GITHUB_USERNAME}/${REPO_NAME}/git/trees/${BRANCH_NAME}?recursive=1`;
+
                 try {
                     const response = await fetch(url);
                     if (!response.ok) {
-                        return null; // Return null if the file is not found (404)
+                        throw new Error(`GitHub API error: ${response.statusText}`);
                     }
-                    const text = await response.text();
-                    const lines = text.split('\n');
-                    const imgUrl = lines.find(line => line.startsWith('imgurl:'))?.replace('imgurl:', '').trim();
-                    const imgName = lines.find(line => line.startsWith('Imgname:'))?.replace('Imgname:', '').trim();
+                    const data = await response.json();
+                    
+                    const imageFiles = data.tree
+                        .filter(file => file.path.startsWith('Images/') && /\.(png|jpg|jpeg|gif)$/i.test(file.path))
+                        .map(file => {
+                            const fileName = file.path.split('/').pop();
+                            return {
+                                imgUrl: `https://raw.githubusercontent.com/${GITHUB_USERNAME}/${REPO_NAME}/${BRANCH_NAME}/${file.path}`,
+                                imgName: fileName.replace(/\.[^/.]+$/, "") // Removes file extension
+                            };
+                        });
 
-                    if (imgUrl && imgName) {
-                        return { imgUrl, imgName };
-                    }
-                } catch (error) {
-                    console.error(`Error fetching file image-${fileNumber}.txt:`, error);
-                }
-                return null;
-            }
-
-            // Function to load all images
-            async function loadImages() {
-                galleryContainer.innerHTML = '<h2>Loading images...</h2>';
-                allImages = [];
-                let foundImages = 0;
-                // This loop tries to fetch up to 100 images. You can adjust this number.
-                for (let i = 1; i <= 100; i++) {
-                    const imgInfo = await fetchImageInfo(i);
-                    if (imgInfo) {
-                        allImages.push(imgInfo);
-                        foundImages++;
-                    }
-                }
-                
-                if (foundImages === 0) {
-                    galleryContainer.innerHTML = '<h2 class="no-results">No images found. Please ensure the repository is correct and accessible.</h2>';
-                } else {
+                    allImages = imageFiles;
                     displayImages(allImages);
+
+                    if (allImages.length === 0) {
+                        galleryContainer.innerHTML = '<h2 class="no-results">No images found. Please ensure the repository and path are correct.</h2>';
+                    }
+
+                } catch (error) {
+                    console.error('Error fetching image list:', error);
+                    galleryContainer.innerHTML = `<h2 class="no-results">Error loading images: ${error.message}</h2>`;
                 }
             }
 
-            // Function to display a list of images
             function displayImages(images) {
                 galleryContainer.innerHTML = '';
                 if (images.length === 0) {
@@ -187,8 +181,7 @@
                 displayImages(filteredImages);
             });
 
-            // Initial load of images
-            loadImages();
+            fetchImages();
         });
     </script>
 </body>
